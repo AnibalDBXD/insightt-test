@@ -78,11 +78,14 @@ describe("PATCH /api/tasks/:id", () => {
     expect(res.body.error?.code).toBe("VALIDATION_ERROR");
   });
 
-  it("forbids editing someone else's task", async () => {
-    mockCollection.findOne.mockResolvedValue({ ...taskDoc("PENDING"), userId: "intruder" });
+  it("edits a task owned by another user (shared board)", async () => {
+    mockCollection.findOne.mockResolvedValue({ ...taskDoc("PENDING"), userId: "someone-else" });
+    mockCollection.findOneAndUpdate.mockResolvedValue(taskDoc("PENDING"));
     const res = fakeRes();
     await handler(patch({ title: "Renamed" }), res);
-    expect(res.statusCode).toBe(403);
+
+    expect(res.statusCode).toBe(200);
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalled();
   });
 
   it("deletes the owner's task", async () => {
@@ -104,7 +107,7 @@ describe("PATCH /api/tasks/:id", () => {
 });
 
 describe("GET /api/tasks", () => {
-  it("returns only the owner's tasks", async () => {
+  it("returns all tasks (shared board)", async () => {
     resetCollection();
     mockCollection.find.mockImplementation(() => ({
       sort: () => ({ toArray: jest.fn(async () => [taskDoc("PENDING")]) }),
@@ -113,7 +116,7 @@ describe("GET /api/tasks", () => {
     await listHandler(fakeReq({ method: "GET" }), res);
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveLength(1);
-    expect(mockCollection.find).toHaveBeenCalledWith({ userId: OWNER });
+    expect(mockCollection.find).toHaveBeenCalledWith({});
   });
 
   it("creates a task with PENDING status", async () => {

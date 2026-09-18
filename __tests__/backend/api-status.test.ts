@@ -75,11 +75,21 @@ describe("POST /api/tasks/:id/status (state machine)", () => {
     expect(res.body.error?.code).toBe("INVALID_TRANSITION");
   });
 
-  it("forbids moving someone else's task", async () => {
-    mockCollection.findOne.mockResolvedValue({ ...taskDoc("PENDING"), userId: "intruder" });
+  it("moves a task owned by another user (shared board)", async () => {
+    mockCollection.findOne.mockResolvedValue({ ...taskDoc("PENDING"), userId: "someone-else" });
+    mockCollection.findOneAndUpdate.mockResolvedValue(taskDoc("IN_PROGRESS"));
     const res = fakeRes();
     await handler(fakeReq({ query: { id: TASK_ID }, body: { status: "IN_PROGRESS" } }), res);
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("forbids a non-owner moving a task to DONE", async () => {
+    mockCollection.findOne.mockResolvedValue({ ...taskDoc("IN_PROGRESS"), userId: "someone-else" });
+    const res = fakeRes();
+    await handler(fakeReq({ query: { id: TASK_ID }, body: { status: "DONE" } }), res);
     expect(res.statusCode).toBe(403);
+    expect(res.body.error?.code).toBe("FORBIDDEN");
+    expect(mockCollection.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   it("validates the body", async () => {

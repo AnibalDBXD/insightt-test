@@ -35,7 +35,7 @@ export default withLogging(
     // the task to DONE; losers re-read and see it done (idempotent).
     const now = new Date();
     const updated = await tasks.findOneAndUpdate(
-      { _id: task._id, userId: ctx.user.sub, status: task.status },
+      { _id: task._id, status: task.status },
       { $set: { status: "DONE", doneAt: now, updatedAt: now } },
       { returnDocument: "after" }
     );

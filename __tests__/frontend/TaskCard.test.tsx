@@ -51,6 +51,13 @@ describe("TaskCard", () => {
     expect(screen.getByTestId("mark-done")).toBeInTheDocument();
   });
 
+  it("hides mark-as-done for another user's task", () => {
+    const task = { ...makeTask("PENDING"), ownerEmail: "someone-else@test.dev" };
+    renderCard(task);
+    expect(screen.queryByTestId("mark-done")).not.toBeInTheDocument();
+    expect(screen.getByTestId("edit-task")).toBeInTheDocument();
+  });
+
   it("hides mark-as-done for a DONE task (keeps archive move available)", () => {
     renderCard(makeTask("DONE"));
     expect(screen.queryByTestId("mark-done")).not.toBeInTheDocument();

@@ -49,6 +49,8 @@ export default function TaskCard({ task, onError, onDone, onUpdated, onDeleted }
   const color = STATUS_COLORS[task.status];
   const owner = task.ownerEmail ?? getSessionEmail() ?? "—";
   const initial = (owner[0] || "?").toUpperCase();
+  // Only the task owner can mark it as DONE.
+  const canMarkDone = !task.ownerEmail || task.ownerEmail === getSessionEmail();
 
   // Drag handle on the card root; the 8px activation distance keeps clicks
   // on the buttons untouched. Dropping into a column performs the move.
@@ -148,7 +150,7 @@ export default function TaskCard({ task, onError, onDone, onUpdated, onDeleted }
           spacing={1}
           sx={{ alignItems: "center", mt: 1.5, justifyContent: "flex-end" }}
         >
-          {task.status !== "DONE" && task.status !== "ARCHIVED" && (
+          {canMarkDone && task.status !== "DONE" && task.status !== "ARCHIVED" && (
             <Tooltip title={t("tasks.markDone")}>
               <Button
                 size="small"

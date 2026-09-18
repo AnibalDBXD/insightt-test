@@ -8,7 +8,7 @@ import { taskEditSchema } from "@/lib/validation/task.schema";
 import { parseBody } from "@/lib/validation/parse";
 
 export default withLogging(
-  withAuth(async (req, res, ctx) => {
+  withAuth(async (req, res) => {
     const { id } = req.query;
     if (typeof id !== "string" || !ObjectId.isValid(id)) {
       return fail(res, 404, "NOT_FOUND");
@@ -18,7 +18,6 @@ export default withLogging(
 
     if (req.method === "PATCH") {
       if (!task) return fail(res, 404, "NOT_FOUND");
-      if (task.userId !== ctx.user.sub) return fail(res, 403, "FORBIDDEN");
 
       const { data, errors } = parseBody(taskEditSchema, req.body);
       if (errors) return fail(res, 400, "VALIDATION_ERROR", errors);
@@ -43,14 +42,12 @@ export default withLogging(
 
     if (req.method === "DELETE") {
       if (!task) return fail(res, 404, "NOT_FOUND");
-      if (task.userId !== ctx.user.sub) return fail(res, 403, "FORBIDDEN");
       await tasks.deleteOne({ _id: task._id });
       return ok(res, { deleted: true });
     }
 
     if (req.method === "GET") {
       if (!task) return fail(res, 404, "NOT_FOUND");
-      if (task.userId !== ctx.user.sub) return fail(res, 403, "FORBIDDEN");
       return ok(res, toDTO(task));
     }
 

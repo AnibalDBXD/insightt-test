@@ -11,10 +11,8 @@ export default withLogging(
     const tasks = await getTasksCollection();
 
     if (req.method === "GET") {
-      const docs = await tasks
-        .find({ userId: ctx.user.sub })
-        .sort({ updatedAt: -1 })
-        .toArray();
+      // Shared board: every authenticated user sees all tasks.
+      const docs = await tasks.find({}).sort({ updatedAt: -1 }).toArray();
       return ok(res, docs.map(toDTO));
     }
 

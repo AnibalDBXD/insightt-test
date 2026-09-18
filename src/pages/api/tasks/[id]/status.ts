@@ -24,7 +24,10 @@ export default withLogging(
     const tasks = await getTasksCollection();
     const task = await tasks.findOne({ _id: new ObjectId(id) });
     if (!task) return fail(res, 404, "NOT_FOUND");
-    if (task.userId !== ctx.user.sub) return fail(res, 403, "FORBIDDEN");
+    // Shared board, but only the task owner can mark it as DONE.
+    if (data.status === "DONE" && task.userId !== ctx.user.sub) {
+      return fail(res, 403, "FORBIDDEN");
+    }
 
     const from = task.status as (typeof data)["status"];
     if (from !== data.status && !canTransition(from, data.status)) {
@@ -32,7 +35,7 @@ export default withLogging(
     }
 
     const updated = await tasks.findOneAndUpdate(
-      { _id: task._id, userId: ctx.user.sub, status: from },
+      { _id: task._id, status: from },
       { $set: { status: data.status, updatedAt: new Date() } },
       { returnDocument: "after" }
     );
