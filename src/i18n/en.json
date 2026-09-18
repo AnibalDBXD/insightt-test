@@ -1,0 +1,53 @@
+{
+  "auth": {
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Sign in to manage your tasks",
+    "registerTitle": "Create your account",
+    "registerSubtitle": "Sign up to start organizing your tasks",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "code": "Verification code",
+    "codePrompt": "We sent a verification code to {{email}}. Enter it to activate your account.",
+    "login": "Sign in",
+    "register": "Sign up",
+    "confirm": "Confirm",
+    "haveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "signInLink": "Sign in",
+    "signUpLink": "Sign up"
+  },
+  "errors": {
+    "INTERNAL_ERROR": "Something went wrong. Please try again.",
+    "VALIDATION_ERROR": "Please check the form fields.",
+    "INVALID_CREDENTIALS": "Incorrect email or password.",
+    "EMAIL_EXISTS": "An account with this email already exists.",
+    "USER_NOT_CONFIRMED": "Please confirm your account first.",
+    "CODE_MISMATCH": "Incorrect verification code.",
+    "CODE_EXPIRED": "The verification code has expired. Please register again.",
+    "INVALID_PASSWORD": "The password does not meet the requirements.",
+    "PASSWORD_MISMATCH": "Passwords do not match.",
+    "UNAUTHORIZED": "Please sign in to continue.",
+    "FORBIDDEN": "You are not allowed to perform this action.",
+    "NOT_FOUND": "Not found.",
+    "SERVER_NOT_CONFIGURED": "The server is not configured yet.",
+    "METHOD_NOT_ALLOWED": "Unsupported method.",
+    "INVALID_TRANSITION": "This status change is not allowed.",
+    "TASK_NOT_EDITABLE": "Completed tasks can only have their title fixed."
+  },
+  "common": {
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "save": "Save",
+    "language": "Language"
+  },
+  "validation": {
+    "REQUIRED": "This field is required.",
+    "INVALID_EMAIL": "Enter a valid email address.",
+    "PASSWORD_TOO_SHORT": "At least 8 characters.",
+    "PASSWORD_TOO_LONG": "At most 64 characters.",
+    "TITLE_TOO_LONG": "At most 100 characters.",
+    "DESCRIPTION_TOO_LONG": "At most 500 characters.",
+    "EMPTY_PATCH": "Nothing to update."
+  }
+}

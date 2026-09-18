@@ -1,10 +1,13 @@
-import Head from "next/head";
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+import { getToken } from "@/lib/apiClient";
 
 export default function Home() {
-  return (
-    <Head>
-      <title>Task App</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-    </Head>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    void router.replace(getToken() ? "/tasks" : "/login");
+  }, [router]);
+
+  return null;
 }

@@ -1,0 +1,53 @@
+{
+  "auth": {
+    "loginTitle": "Bienvenido de nuevo",
+    "loginSubtitle": "Inicia sesión para gestionar tus tareas",
+    "registerTitle": "Crea tu cuenta",
+    "registerSubtitle": "Regístrate para empezar a organizar tus tareas",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "code": "Código de verificación",
+    "codePrompt": "Enviamos un código de verificación a {{email}}. Ingrésalo para activar tu cuenta.",
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "confirm": "Confirmar",
+    "haveAccount": "¿Ya tienes una cuenta?",
+    "noAccount": "¿No tienes una cuenta?",
+    "signInLink": "Iniciar sesión",
+    "signUpLink": "Registrarse"
+  },
+  "errors": {
+    "INTERNAL_ERROR": "Algo salió mal. Inténtalo de nuevo.",
+    "VALIDATION_ERROR": "Revisa los campos del formulario.",
+    "INVALID_CREDENTIALS": "Correo o contraseña incorrectos.",
+    "EMAIL_EXISTS": "Ya existe una cuenta con este correo electrónico.",
+    "USER_NOT_CONFIRMED": "Primero confirma tu cuenta.",
+    "CODE_MISMATCH": "Código de verificación incorrecto.",
+    "CODE_EXPIRED": "El código de verificación ha expirado. Regístrate de nuevo.",
+    "INVALID_PASSWORD": "La contraseña no cumple los requisitos.",
+    "PASSWORD_MISMATCH": "Las contraseñas no coinciden.",
+    "UNAUTHORIZED": "Inicia sesión para continuar.",
+    "FORBIDDEN": "No tienes permitido realizar esta acción.",
+    "NOT_FOUND": "No encontrado.",
+    "SERVER_NOT_CONFIGURED": "El servidor aún no está configurado.",
+    "METHOD_NOT_ALLOWED": "Método no permitido.",
+    "INVALID_TRANSITION": "Este cambio de estado no está permitido.",
+    "TASK_NOT_EDITABLE": "Las tareas completadas solo permiten corregir el título."
+  },
+  "common": {
+    "loading": "Cargando...",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "language": "Idioma"
+  },
+  "validation": {
+    "REQUIRED": "Este campo es obligatorio.",
+    "INVALID_EMAIL": "Ingresa un correo electrónico válido.",
+    "PASSWORD_TOO_SHORT": "Al menos 8 caracteres.",
+    "PASSWORD_TOO_LONG": "Como máximo 64 caracteres.",
+    "TITLE_TOO_LONG": "Como máximo 100 caracteres.",
+    "DESCRIPTION_TOO_LONG": "Como máximo 500 caracteres.",
+    "EMPTY_PATCH": "No hay nada que actualizar."
+  }
+}
