@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { useTranslation } from "react-i18next";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Box,
   Card,
@@ -16,71 +19,87 @@ import {
 } from "@mui/material";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { apiFetch, ApiError } from "@/lib/apiClient";
+import { registerSchema } from "@/lib/validation/auth.schema";
+
+interface RegisterForm {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+// Client-side only: the backend schema stays untouched.
+const registerFormSchema = registerSchema
+  .extend({ confirmPassword: z.string() })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "PASSWORD_MISMATCH",
+  });
+
+interface ConfirmForm {
+  code: string;
+}
+
+const confirmCodeSchema = z.object({
+  code: z.string().min(4, "REQUIRED").max(10, "CODE_INVALID"),
+});
 
 export default function RegisterPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const [step, setStep] = useState<"form" | "code">("form");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, string[]> | undefined>();
-  const [loading, setLoading] = useState(false);
 
-  async function onError(err: unknown) {
+  const registerForm = useForm<RegisterForm>({
+    resolver: zodResolver(registerFormSchema),
+  });
+  const confirmForm = useForm<ConfirmForm>({ resolver: zodResolver(confirmCodeSchema) });
+
+  function showApiError(err: unknown) {
     const apiErr = err as ApiError;
     setError(t(`errors.${apiErr.code}`, { defaultValue: t("errors.INTERNAL_ERROR") }));
     setDetails(apiErr.details);
   }
 
-  async function onRegister(e: React.FormEvent) {
-    e.preventDefault();
+  async function onRegister(data: RegisterForm) {
     setError(null);
     setDetails(undefined);
-    if (password !== confirm) {
-      setError(t("errors.PASSWORD_MISMATCH"));
-      return;
-    }
-    setLoading(true);
+    setEmail(data.email);
     try {
       const res = await apiFetch<{ confirmed: boolean }>("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: data.email, password: data.password }),
       });
       if (res.confirmed) {
-        await router.push({ pathname: "/login", query: { email } });
+        await router.push({ pathname: "/login", query: { email: data.email } });
       } else {
         setStep("code");
       }
     } catch (err) {
-      await onError(err);
-    } finally {
-      setLoading(false);
+      showApiError(err);
     }
   }
 
-  async function onConfirm(e: React.FormEvent) {
-    e.preventDefault();
+  async function onConfirm(data: ConfirmForm) {
     setError(null);
     setDetails(undefined);
-    setLoading(true);
     try {
       await apiFetch("/api/auth/confirm", {
         method: "POST",
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ email, code: data.code }),
       });
       await router.push({ pathname: "/login", query: { email } });
     } catch (err) {
-      await onError(err);
-    } finally {
-      setLoading(false);
+      showApiError(err);
     }
   }
 
-  const fieldErrors = (key: string) =>
+  const detailMessages = (key: string) =>
     details?.[key]?.map((msg) => t(`validation.${msg}`, { defaultValue: msg }));
+
+  const { errors: registerErrors, isSubmitting: registering } = registerForm.formState;
+  const { errors: confirmErrors, isSubmitting: confirming } = confirmForm.formState;
 
   return (
     <Box
@@ -110,12 +129,12 @@ export default function RegisterPage() {
           {error && (
             <Alert role="alert" severity="error" sx={{ mb: 2 }}>
               {error}
-              {fieldErrors("email")?.map((msg) => (
+              {detailMessages("email")?.map((msg) => (
                 <Typography key={msg} variant="caption" sx={{ display: "block" }}>
                   {t("auth.email")}: {msg}
                 </Typography>
               ))}
-              {fieldErrors("password")?.map((msg) => (
+              {detailMessages("password")?.map((msg) => (
                 <Typography key={msg} variant="caption" sx={{ display: "block" }}>
                   {t("auth.password")}: {msg}
                 </Typography>
@@ -124,39 +143,56 @@ export default function RegisterPage() {
           )}
 
           {step === "form" ? (
-            <Box component="form" onSubmit={onRegister} noValidate>
+            <Box component="form" onSubmit={registerForm.handleSubmit(onRegister)} noValidate>
               <Stack spacing={2}>
                 <TextField
                   type="email"
                   label={t("auth.email")}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   required
                   fullWidth
                   autoFocus
-                  error={Boolean(fieldErrors("email"))}
-                  helperText={fieldErrors("email")?.[0]}
+                  error={Boolean(registerErrors.email)}
+                  helperText={
+                    registerErrors.email
+                      ? t(`validation.${registerErrors.email.message}`)
+                      : undefined
+                  }
+                  {...registerForm.register("email")}
                 />
                 <TextField
                   type="password"
                   label={t("auth.password")}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   required
                   fullWidth
-                  error={Boolean(fieldErrors("password"))}
-                  helperText={fieldErrors("password")?.[0]}
+                  error={Boolean(registerErrors.password)}
+                  helperText={
+                    registerErrors.password
+                      ? t(`validation.${registerErrors.password.message}`)
+                      : undefined
+                  }
+                  {...registerForm.register("password")}
                 />
                 <TextField
                   type="password"
                   label={t("auth.confirmPassword")}
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
                   required
                   fullWidth
+                  error={Boolean(registerErrors.confirmPassword)}
+                  helperText={
+                    registerErrors.confirmPassword
+                      ? t(`validation.${registerErrors.confirmPassword.message}`)
+                      : undefined
+                  }
+                  {...registerForm.register("confirmPassword")}
                 />
-                <Button type="submit" variant="contained" size="large" disabled={loading} sx={{ mt: 1 }}>
-                  {loading ? (
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  disabled={registering}
+                  sx={{ mt: 1 }}
+                >
+                  {registering ? (
                     <CircularProgress size={20} color="inherit" />
                   ) : (
                     t("auth.register")
@@ -165,24 +201,35 @@ export default function RegisterPage() {
               </Stack>
             </Box>
           ) : (
-            <Box component="form" onSubmit={onConfirm} noValidate>
+            <Box component="form" onSubmit={confirmForm.handleSubmit(onConfirm)} noValidate>
               <Stack spacing={2}>
                 <Typography color="text.secondary">
                   {t("auth.codePrompt", { email })}
                 </Typography>
                 <TextField
                   label={t("auth.code")}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
                   required
                   fullWidth
                   autoFocus
+                  error={Boolean(confirmErrors.code)}
+                  helperText={
+                    confirmErrors.code
+                      ? t(`validation.${confirmErrors.code.message}`)
+                      : undefined
+                  }
                   slotProps={{
                     htmlInput: { inputMode: "numeric", "data-testid": "confirm-code" },
                   }}
+                  {...confirmForm.register("code")}
                 />
-                <Button type="submit" variant="contained" size="large" disabled={loading} sx={{ mt: 1 }}>
-                  {loading ? (
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  disabled={confirming}
+                  sx={{ mt: 1 }}
+                >
+                  {confirming ? (
                     <CircularProgress size={20} color="inherit" />
                   ) : (
                     t("auth.confirm")

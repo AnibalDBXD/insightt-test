@@ -1,5 +1,5 @@
 import "@/i18n";
-import { fireEvent, screen, render } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import TaskFormDialog from "@/components/TaskFormDialog";
 
 describe("TaskFormDialog", () => {
@@ -9,13 +9,13 @@ describe("TaskFormDialog", () => {
     expect(screen.getByRole("button", { name: /Create task/i })).toBeInTheDocument();
   });
 
-  it("requires a title", () => {
+  it("requires a title", async () => {
     render(<TaskFormDialog open onSubmit={jest.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Create task/i }));
-    expect(screen.getByText(/This field is required/i)).toBeInTheDocument();
+    await screen.findByText(/This field is required/i);
   });
 
-  it("submits trimmed values", () => {
+  it("submits trimmed values", async () => {
     const onSubmit = jest.fn();
     render(<TaskFormDialog open onSubmit={onSubmit} />);
     fireEvent.change(screen.getByLabelText(/Title/i), {
@@ -26,19 +26,21 @@ describe("TaskFormDialog", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /Create task/i }));
 
-    expect(onSubmit).toHaveBeenCalledWith({
-      title: "Buy milk",
-      description: "Two liters",
-    });
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({
+        title: "Buy milk",
+        description: "Two liters",
+      })
+    );
   });
 
-  it("rejects an overlong title", () => {
+  it("rejects an overlong title", async () => {
     render(<TaskFormDialog open onSubmit={jest.fn()} />);
     fireEvent.change(screen.getByLabelText(/Title/i), {
       target: { value: "a".repeat(101) },
     });
     fireEvent.click(screen.getByRole("button", { name: /Create task/i }));
-    expect(screen.getByText(/At most 100 characters/i)).toBeInTheDocument();
+    await screen.findByText(/At most 100 characters/i);
   });
 
   it("locks description for DONE tasks and keeps title editable", () => {

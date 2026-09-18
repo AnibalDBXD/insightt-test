@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { useTranslation } from "react-i18next";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Box,
   Card,
@@ -15,48 +17,53 @@ import {
   CircularProgress,
 } from "@mui/material";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { apiFetch, ApiError } from "@/lib/apiClient";
+import { apiFetch, ApiError, saveSession } from "@/lib/apiClient";
+import { loginSchema, type AuthInput } from "@/lib/validation/auth.schema";
+
+interface LoginResponse {
+  accessToken: string;
+  user: { email: string };
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, string[]> | undefined>();
-  const [loading, setLoading] = useState(false);
 
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors: fieldErrors, isSubmitting },
+  } = useForm<AuthInput>({ resolver: zodResolver(loginSchema) });
+
+  // Prefill email when redirected from registration (?email=...).
   const prefill = typeof router.query.email === "string" ? router.query.email : "";
-
   const [lastPrefill, setLastPrefill] = useState("");
   if (prefill !== lastPrefill) {
     setLastPrefill(prefill);
-    if (prefill) setEmail(prefill);
+    if (prefill) setValue("email", prefill);
   }
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  async function onValid(data: AuthInput) {
     setError(null);
     setDetails(undefined);
     try {
-      const res = await apiFetch<{ accessToken: string; user: { email: string } }>(
-        "/api/auth/login",
-        { method: "POST", body: JSON.stringify({ email, password }) }
-      );
-      localStorage.setItem("auth.accessToken", res.accessToken);
-      localStorage.setItem("auth.email", res.user.email);
+      const res = await apiFetch<LoginResponse>("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      saveSession(res.accessToken, res.user.email);
       await router.replace("/tasks");
     } catch (err) {
       const apiErr = err as ApiError;
       setError(t(`errors.${apiErr.code}`, { defaultValue: t("errors.INTERNAL_ERROR") }));
       setDetails(apiErr.details);
-    } finally {
-      setLoading(false);
     }
   }
 
-  const fieldErrors = (key: string) =>
+  const detailMessages = (key: string) =>
     details?.[key]?.map((msg) => t(`validation.${msg}`, { defaultValue: msg }));
 
   return (
@@ -87,12 +94,12 @@ export default function LoginPage() {
           {error && (
             <Alert role="alert" severity="error" sx={{ mb: 2 }}>
               {error}
-              {fieldErrors("email")?.map((msg) => (
+              {detailMessages("email")?.map((msg) => (
                 <Typography key={msg} variant="caption" sx={{ display: "block" }}>
                   {t("auth.email")}: {msg}
                 </Typography>
               ))}
-              {fieldErrors("password")?.map((msg) => (
+              {detailMessages("password")?.map((msg) => (
                 <Typography key={msg} variant="caption" sx={{ display: "block" }}>
                   {t("auth.password")}: {msg}
                 </Typography>
@@ -100,35 +107,45 @@ export default function LoginPage() {
             </Alert>
           )}
 
-          <Box component="form" onSubmit={onSubmit} noValidate>
+          <Box component="form" onSubmit={handleSubmit(onValid)} noValidate>
             <Stack spacing={2}>
               <TextField
                 type="email"
                 label={t("auth.email")}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
                 fullWidth
                 autoFocus
-                error={Boolean(fieldErrors("email"))}
-                helperText={fieldErrors("email")?.[0]}
+                error={Boolean(fieldErrors.email)}
+                helperText={
+                  fieldErrors.email ? t(`validation.${fieldErrors.email.message}`) : undefined
+                }
+                {...register("email")}
               />
               <TextField
                 type="password"
                 label={t("auth.password")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 required
                 fullWidth
+                error={Boolean(fieldErrors.password)}
+                helperText={
+                  fieldErrors.password
+                    ? t(`validation.${fieldErrors.password.message}`)
+                    : undefined
+                }
+                {...register("password")}
               />
               <Button
                 type="submit"
                 variant="contained"
                 size="large"
-                disabled={loading}
+                disabled={isSubmitting}
                 sx={{ mt: 1 }}
               >
-                {loading ? <CircularProgress size={20} color="inherit" /> : t("auth.login")}
+                {isSubmitting ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  t("auth.login")
+                )}
               </Button>
             </Stack>
           </Box>

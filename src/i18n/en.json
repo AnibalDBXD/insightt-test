@@ -26,7 +26,6 @@
     "CODE_MISMATCH": "Incorrect verification code.",
     "CODE_EXPIRED": "The verification code has expired. Please register again.",
     "INVALID_PASSWORD": "The password does not meet the requirements.",
-    "PASSWORD_MISMATCH": "Passwords do not match.",
     "UNAUTHORIZED": "Please sign in to continue.",
     "FORBIDDEN": "You are not allowed to perform this action.",
     "NOT_FOUND": "Not found.",
@@ -75,6 +74,8 @@
     "PASSWORD_TOO_LONG": "At most 64 characters.",
     "TITLE_TOO_LONG": "At most 100 characters.",
     "DESCRIPTION_TOO_LONG": "At most 500 characters.",
-    "EMPTY_PATCH": "Nothing to update."
+    "EMPTY_PATCH": "Nothing to update.",
+    "PASSWORD_MISMATCH": "Passwords do not match.",
+    "CODE_INVALID": "The code must be 4 to 10 characters."
   }
 }

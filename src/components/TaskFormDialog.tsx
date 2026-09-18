@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useForm, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
   DialogContent,
@@ -24,69 +26,69 @@ interface Props {
 
 export default function TaskFormDialog({ initial, submitting, onSubmit, ...dialog }: Props) {
   const { t } = useTranslation();
-  const [title, setTitle] = useState(initial?.title ?? "");
-  const [description, setDescription] = useState(initial?.description ?? "");
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   const doneLocked = Boolean(initial && initial.status === "DONE");
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const input: TaskInput = {
-      title: title.trim(),
-      ...(description.trim() || !doneLocked ? { description: description.trim() } : {}),
-    };
-    const schema = doneLocked
-      ? taskEditSchema.required({ title: true }).omit({ description: true })
-      : taskCreateSchema;
-    const parsed = schema.safeParse(input);
-    if (!parsed.success) {
-      const fieldErrors: Record<string, string[]> = {};
-      for (const issue of parsed.error.issues) {
-        const key = String(issue.path[0] ?? "_");
-        (fieldErrors[key] ??= []).push(issue.message);
-      }
-      setErrors(fieldErrors);
-      return;
-    }
-    setErrors({});
-    onSubmit(parsed.data as TaskInput);
+  const schema = useMemo(
+    () =>
+      doneLocked
+        ? taskEditSchema.required({ title: true }).omit({ description: true })
+        : taskCreateSchema,
+    [doneLocked]
+  );
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<TaskInput>({
+    resolver: zodResolver(schema) as Resolver<TaskInput>,
+    defaultValues: {
+      title: initial?.title ?? "",
+      description: initial?.description ?? "",
+    },
+  });
+
+  function submit(data: TaskInput) {
+    onSubmit({
+      title: data.title.trim(),
+      ...(doneLocked ? {} : { description: data.description?.trim() || undefined }),
+    });
   }
+
+  const fieldError = (key: "title" | "description") =>
+    errors[key] ? t(`validation.${errors[key]?.message}`) : undefined;
 
   return (
     <Dialog {...dialog} maxWidth="xs" fullWidth>
-      <DialogTitle>
-        {initial ? t("tasks.editTask") : t("tasks.createTask")}
-      </DialogTitle>
+      <DialogTitle>{initial ? t("tasks.editTask") : t("tasks.createTask")}</DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
         <Stack
           component="form"
           spacing={2}
-          onSubmit={submit}
+          onSubmit={handleSubmit(submit)}
           noValidate
           data-testid="task-dialog"
         >
           <TextField
             label={t("tasks.titleField")}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
             required
             autoFocus
             fullWidth
             error={Boolean(errors.title)}
-            helperText={errors.title?.map((m) => t(`validation.${m}`)).join(" ")}
+            helperText={fieldError("title")}
             slotProps={{ htmlInput: { "data-testid": "task-title-input" } }}
+            {...register("title")}
           />
           <TextField
             label={t("tasks.descriptionOptional")}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
             fullWidth
             multiline
             minRows={2}
             disabled={doneLocked}
-            helperText={doneLocked ? t("tasks.doneOnlyTitle") : undefined}
+            helperText={doneLocked ? t("tasks.doneOnlyTitle") : fieldError("description")}
             error={Boolean(errors.description)}
+            {...register("description")}
           />
           <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end", mt: 1 }}>
             <Button onClick={() => dialog.onClose?.(new Event("cancel"), "escapeKeyDown")}>
