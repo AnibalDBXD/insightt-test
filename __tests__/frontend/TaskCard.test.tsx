@@ -49,7 +49,6 @@ describe("TaskCard", () => {
     expect(screen.getByTestId("task-title")).toHaveTextContent("Write tests");
     expect(screen.getByTestId("task-status")).toHaveTextContent("Pending");
     expect(screen.getByTestId("mark-done")).toBeInTheDocument();
-    expect(screen.getByTestId("status-select")).toBeInTheDocument();
   });
 
   it("hides mark-as-done for a DONE task (keeps archive move available)", () => {
@@ -58,8 +57,8 @@ describe("TaskCard", () => {
     expect(screen.getByTestId("task-status")).toHaveTextContent("Done");
   });
 
-  it("hides the status select for ARCHIVED tasks", () => {
+  it("hides mark-as-done for ARCHIVED tasks too", () => {
     renderCard(makeTask("ARCHIVED"));
-    expect(screen.queryByTestId("status-select")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("mark-done")).not.toBeInTheDocument();
   });
 });

@@ -9,8 +9,6 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  MenuItem,
-  Select,
   Button,
   Dialog,
   DialogContent,
@@ -22,14 +20,12 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import CheckIcon from "@mui/icons-material/Check";
 import type { TaskDTO } from "@/lib/types";
-import { nextStatuses, type TaskStatus } from "@/lib/taskState";
 import { STATUS_COLORS } from "@/styles/statusColors";
 import { getSessionEmail } from "@/lib/apiClient";
 import {
   useDeleteTask,
   useEditTask,
   useMarkDone,
-  useMoveStatus,
   type TaskInput,
 } from "@/hooks/useTasks";
 import TaskFormDialog from "./TaskFormDialog";
@@ -46,7 +42,6 @@ export default function TaskCard({ task, onError, onDone, onUpdated, onDeleted }
   const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const moveStatus = useMoveStatus();
   const markDone = useMarkDone();
   const deleteTask = useDeleteTask();
   const editTask = useEditTask();
@@ -56,22 +51,13 @@ export default function TaskCard({ task, onError, onDone, onUpdated, onDeleted }
   const initial = (owner[0] || "?").toUpperCase();
 
   // Drag handle on the card root; the 8px activation distance keeps clicks
-  // on the buttons/select untouched. Moving tasks from the keyboard uses the
-  // status select instead.
+  // on the buttons untouched. Dropping into a column performs the move.
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
     data: { status: task.status },
   });
 
-  const next = nextStatuses(task.status);
-  const busy = moveStatus.isPending || markDone.isPending || deleteTask.isPending;
-
-  function handleStatus(newStatus: TaskStatus) {
-    moveStatus.mutate(
-      { id: task.id, status: newStatus },
-      { onError, onSuccess: onUpdated }
-    );
-  }
+  const busy = markDone.isPending || deleteTask.isPending;
 
   function handleEdit(input: TaskInput) {
     editTask.mutate(
@@ -90,6 +76,7 @@ export default function TaskCard({ task, onError, onDone, onUpdated, onDeleted }
     <Card
       ref={setNodeRef}
       data-testid="task-item"
+      data-task-id={task.id}
       style={{
         transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
         opacity: isDragging ? 0.55 : 1,
@@ -159,71 +146,48 @@ export default function TaskCard({ task, onError, onDone, onUpdated, onDeleted }
         <Stack
           direction="row"
           spacing={1}
-          sx={{ alignItems: "center", mt: 1.5, flexWrap: "wrap" }}
+          sx={{ alignItems: "center", mt: 1.5, justifyContent: "flex-end" }}
         >
-          {next.length > 0 && (
-            <Select
-              size="small"
-              value={task.status}
-              disabled={busy}
-              aria-label="Move task to status"
-              data-testid="status-select"
-              onChange={(e) => handleStatus(e.target.value as TaskStatus)}
-              sx={{ minWidth: 140, maxWidth: "100%" }}
-            >
-              <MenuItem value={task.status} disabled>
-                {t(`tasks.statuses.${task.status}`)}
-              </MenuItem>
-              {next.map((s) => (
-                <MenuItem key={s} value={s}>
-                  {t(`tasks.statuses.${s}`)}
-                </MenuItem>
-              ))}
-            </Select>
+          {task.status !== "DONE" && task.status !== "ARCHIVED" && (
+            <Tooltip title={t("tasks.markDone")}>
+              <Button
+                size="small"
+                variant="outlined"
+                color="success"
+                disabled={busy}
+                data-testid="mark-done"
+                startIcon={<CheckIcon />}
+                onClick={() =>
+                  markDone.mutate(task.id, {
+                    onError,
+                    onSuccess: (res) => onDone(res.alreadyDone),
+                  })
+                }
+              >
+                {t("tasks.statuses.DONE")}
+              </Button>
+            </Tooltip>
           )}
-
-          <Stack direction="row" spacing={0.5} sx={{ ml: "auto", alignItems: "center" }}>
-            {task.status !== "DONE" && task.status !== "ARCHIVED" && (
-              <Tooltip title={t("tasks.markDone")}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="success"
-                  disabled={busy}
-                  data-testid="mark-done"
-                  startIcon={<CheckIcon />}
-                  onClick={() =>
-                    markDone.mutate(task.id, {
-                      onError,
-                      onSuccess: (res) => onDone(res.alreadyDone),
-                    })
-                  }
-                >
-                  {t("tasks.statuses.DONE")}
-                </Button>
-              </Tooltip>
-            )}
-            <Tooltip title={t("tasks.editTask")}>
-              <IconButton
-                aria-label={t("tasks.editTask")}
-                data-testid="edit-task"
-                disabled={busy}
-                onClick={() => setDialogOpen(true)}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t("tasks.deleteTask")}>
-              <IconButton
-                aria-label={t("tasks.deleteTask")}
-                data-testid="delete-task"
-                disabled={busy}
-                onClick={() => setConfirmOpen(true)}
-              >
-                <DeleteOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Stack>
+          <Tooltip title={t("tasks.editTask")}>
+            <IconButton
+              aria-label={t("tasks.editTask")}
+              data-testid="edit-task"
+              disabled={busy}
+              onClick={() => setDialogOpen(true)}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t("tasks.deleteTask")}>
+            <IconButton
+              aria-label={t("tasks.deleteTask")}
+              data-testid="delete-task"
+              disabled={busy}
+              onClick={() => setConfirmOpen(true)}
+            >
+              <DeleteOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </CardContent>
 

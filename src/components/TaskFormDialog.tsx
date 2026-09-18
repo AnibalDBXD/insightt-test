@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,14 +19,14 @@ import type { TaskInput } from "@/hooks/useTasks";
 import { getSessionEmail } from "@/lib/apiClient";
 
 interface Props {
-  open: DialogProps["open"];
+  open: boolean;
   onClose?: DialogProps["onClose"];
   initial?: TaskDTO;
   submitting?: boolean;
   onSubmit: (input: TaskInput) => void;
 }
 
-export default function TaskFormDialog({ initial, submitting, onSubmit, ...dialog }: Props) {
+export default function TaskFormDialog({ open, initial, submitting, onSubmit, ...dialog }: Props) {
   const { t } = useTranslation();
 
   const doneLocked = Boolean(initial && initial.status === "DONE");
@@ -42,6 +42,7 @@ export default function TaskFormDialog({ initial, submitting, onSubmit, ...dialo
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<TaskInput>({
     resolver: zodResolver(schema) as Resolver<TaskInput>,
@@ -50,6 +51,17 @@ export default function TaskFormDialog({ initial, submitting, onSubmit, ...dialo
       description: initial?.description ?? "",
     },
   });
+
+  // Fresh form on every open: edits prefill their task, create starts empty.
+  const taskId = initial?.id;
+  useEffect(() => {
+    if (open) {
+      reset({ title: initial?.title ?? "", description: initial?.description ?? "" });
+    } else {
+      reset({ title: "", description: "" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, taskId, reset]);
 
   function submit(data: TaskInput) {
     onSubmit({
@@ -62,13 +74,13 @@ export default function TaskFormDialog({ initial, submitting, onSubmit, ...dialo
     errors[key] ? t(`validation.${errors[key]?.message}`) : undefined;
 
   return (
-    <Dialog {...dialog} maxWidth="xs" fullWidth>
+    <Dialog {...dialog} open={open} maxWidth="xs" fullWidth>
       <DialogTitle>{initial ? t("tasks.editTask") : t("tasks.createTask")}</DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
         <Typography
           variant="caption"
           color="text.secondary"
-          sx={{ display: "block", px: 3, mb: 1 }}
+          sx={{ display: "block", mb: 1 }}
           data-testid="dialog-owner"
         >
           {initial

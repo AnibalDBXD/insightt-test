@@ -54,20 +54,28 @@ describe("core flow: login and move task to done", () => {
     cy.get('form[data-testid="task-dialog"]').submit();
     cy.contains('[data-testid="task-item"]', "Cypress demo task").as("task");
 
-    cy.get("@task").within(() => {
-      cy.get('[data-testid="task-status"]').should("contain", "Pending");
-      // PENDING -> IN_PROGRESS
-      cy.get('[data-testid="status-select"]').click();
-    });
-    cy.contains('li[role="option"]', "In progress").click();
-    cy.get("@task").within(() => {
-      cy.get('[data-testid="task-status"]').should("contain", "In progress");
-      // IN_PROGRESS -> DONE
-      cy.get('[data-testid="mark-done"]').click();
-      cy.get('[data-testid="task-status"]').should("contain", "Done");
-      // The mark-as-done button is gone once DONE.
-      cy.get('[data-testid="mark-done"]').should("not.exist");
-    });
+    // UI moves happen through drag & drop; the spec drives the same state
+    // machine through its API for the PENDING -> IN_PROGRESS step.
+    cy.get("@task")
+      .then(($el) => $el.attr("data-task-id"))
+      .then((id) => {
+        const token = localStorage.getItem("auth.accessToken") as string;
+        cy.request({
+          method: "POST",
+          url: `/api/tasks/${id}/status`,
+          auth: { bearer: token },
+          body: { status: "IN_PROGRESS" },
+        });
+        cy.reload();
+        cy.get(`[data-task-id="${id}"]`).within(() => {
+          cy.get('[data-testid="task-status"]').should("contain", "In progress");
+          // IN_PROGRESS -> DONE via the idempotent endpoint.
+          cy.get('[data-testid="mark-done"]').click();
+          cy.get('[data-testid="task-status"]').should("contain", "Done");
+          // The mark-as-done button is gone once DONE.
+          cy.get('[data-testid="mark-done"]').should("not.exist");
+        });
+      });
   });
 
   it("rejects an invalid status transition over the API", () => {
