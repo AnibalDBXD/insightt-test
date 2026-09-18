@@ -10,7 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "cypress:open": "cypress open",
-    "e2e": "next build && cross-env E2E_TEST_MODE=1 start-server-and-test start http://localhost:3000 \"cypress run --e2e\"",
+    "e2e": "next build && cross-env E2E_TEST_MODE=1 start-server-and-test start http://localhost:3000 \"cypress run --e2e --headed --no-exit\"",
     "e2e:headless": "next build && cross-env E2E_TEST_MODE=1 start-server-and-test start http://localhost:3000 \"cypress run --e2e --headless\""
   },
   "dependencies": {
