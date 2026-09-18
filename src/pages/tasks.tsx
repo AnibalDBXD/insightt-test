@@ -3,11 +3,21 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import { useTranslation } from "react-i18next";
 import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
   AppBar,
   Box,
   Button,
+  Chip,
   Container,
   IconButton,
+  Paper,
   Stack,
   Toolbar,
   Typography,
@@ -20,9 +30,16 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TaskCard from "@/components/TaskCard";
 import TaskFormDialog from "@/components/TaskFormDialog";
-import { useCreateTask, useTasks } from "@/hooks/useTasks";
+import {
+  useCreateTask,
+  useMarkDone,
+  useMoveStatus,
+  useTasks,
+} from "@/hooks/useTasks";
 import { clearSession, getSessionEmail, getToken, ApiError } from "@/lib/apiClient";
 import { TASK_STATUSES, type TaskStatus } from "@/lib/taskState";
+import { STATUS_COLORS } from "@/styles/statusColors";
+import theme from "@/styles/theme";
 
 export default function TasksPage() {
   const router = useRouter();
@@ -34,6 +51,13 @@ export default function TasksPage() {
 
   const { data: tasks, isLoading, error } = useTasks();
   const createTask = useCreateTask();
+  const moveStatus = useMoveStatus();
+  const markDone = useMarkDone();
+
+  const sensors = useSensors(
+    // 8px activation keeps card clicks (buttons, select) separate from drags.
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
   // The board reads localStorage (token, email) during render — render the
   // spinner during hydration too, so the first client render matches the
@@ -67,6 +91,34 @@ export default function TasksPage() {
     void router.replace("/login");
   }
 
+  // Drops into DONE use the idempotent mark-done endpoint; every other move
+  // goes through the state machine, which rejects invalid transitions.
+  function onDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over) return;
+    const targetStatus = over.id as TaskStatus;
+    const task = tasks?.find((item) => item.id === active.id);
+    if (!task || task.status === targetStatus) return;
+    if (targetStatus === "DONE") {
+      markDone.mutate(task.id, {
+        onError,
+        onSuccess: (res) =>
+          setToast({
+            message: res.alreadyDone ? t("tasks.alreadyDone") : t("tasks.taskDone"),
+            severity: "success",
+          }),
+      });
+    } else {
+      moveStatus.mutate(
+        { id: task.id, status: targetStatus },
+        {
+          onError,
+          onSuccess: () => setToast({ message: t("tasks.taskUpdated"), severity: "success" }),
+        }
+      );
+    }
+  }
+
   if (!hydrated || !getToken() || (isLoading && !error)) {
     return (
       <Box sx={{ display: "grid", placeItems: "center", minHeight: "100dvh" }}>
@@ -80,24 +132,49 @@ export default function TasksPage() {
       <Head>
         <title>Task App</title>
       </Head>
-      <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: 1, borderColor: "divider" }}>
+      <AppBar
+        position="static"
+        elevation={0}
+        sx={{
+          background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+          color: "#fff",
+        }}
+      >
         <Toolbar>
-          <Typography variant="h6" sx={{ fontWeight: 600, flexGrow: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, flexGrow: 1 }}>
             Task App
           </Typography>
-          <LanguageSwitcher sx={{ mr: 1, bgcolor: "transparent" }} />
-          <Typography variant="body2" color="text.secondary" sx={{ mr: 1, display: { xs: "none", sm: "block" } }}>
+          <LanguageSwitcher
+            sx={{
+              mr: 1,
+              bgcolor: "rgb(255 255 255 / 0.22)",
+              "& .MuiSelect-select": { color: "#fff" },
+              "& .MuiSelect-icon": { color: "#fff" },
+            }}
+          />
+          <Typography
+            variant="body2"
+            sx={{ mr: 1, display: { xs: "none", sm: "block" }, color: "rgb(255 255 255 / 0.85)" }}
+          >
             {getSessionEmail()}
           </Typography>
-          <IconButton aria-label={t("common.logout")} data-testid="logout" onClick={logout}>
+          <IconButton
+            aria-label={t("common.logout")}
+            data-testid="logout"
+            onClick={logout}
+            sx={{ color: "#fff" }}
+          >
             <LogoutIcon />
           </IconButton>
         </Toolbar>
       </AppBar>
 
       <Container maxWidth="xl" sx={{ py: 3 }}>
-        <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 1 }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
+        <Stack
+          direction="row"
+          sx={{ justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 1 }}
+        >
+          <Typography variant="h4" component="h1">
             {t("tasks.boardTitle")}
           </Typography>
           <Button
@@ -110,55 +187,33 @@ export default function TasksPage() {
           </Button>
         </Stack>
 
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "repeat(4, 1fr)" },
-            gap: 2,
-            alignItems: "start",
-          }}
-        >
-          {TASK_STATUSES.map((status: TaskStatus) => {
-            const columnTasks = (tasks ?? []).filter((task) => task.status === status);
-            return (
-              <Box key={status}>
-                <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1, px: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    {t(`tasks.statuses.${status}`)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {columnTasks.length}
-                  </Typography>
-                </Stack>
-                <Stack spacing={1.5}>
-                  {columnTasks.length === 0 ? (
-                    <Typography variant="body2" color="text.disabled" sx={{ px: 1 }} data-testid="empty-column">
-                      {t("tasks.emptyList")}
-                    </Typography>
-                  ) : (
-                    columnTasks.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        onError={onError}
-                        onDone={(alreadyDone) =>
-                          setToast({
-                            message: alreadyDone
-                              ? t("tasks.alreadyDone")
-                              : t("tasks.taskDone"),
-                            severity: "success",
-                          })
-                        }
-                        onUpdated={() => setToast({ message: t("tasks.taskUpdated"), severity: "success" })}
-                        onDeleted={() => setToast({ message: t("tasks.taskDeleted"), severity: "success" })}
-                      />
-                    ))
-                  )}
-                </Stack>
-              </Box>
-            );
-          })}
-        </Box>
+        <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "repeat(4, 1fr)" },
+              gap: 2,
+              alignItems: "start",
+            }}
+          >
+            {TASK_STATUSES.map((status: TaskStatus) => (
+              <StatusColumn
+                key={status}
+                status={status}
+                tasks={tasks ?? []}
+                onError={onError}
+                onDone={(alreadyDone) =>
+                  setToast({
+                    message: alreadyDone ? t("tasks.alreadyDone") : t("tasks.taskDone"),
+                    severity: "success",
+                  })
+                }
+                onUpdated={() => setToast({ message: t("tasks.taskUpdated"), severity: "success" })}
+                onDeleted={() => setToast({ message: t("tasks.taskDeleted"), severity: "success" })}
+              />
+            ))}
+          </Box>
+        </DndContext>
       </Container>
 
       <TaskFormDialog
@@ -192,6 +247,80 @@ export default function TasksPage() {
         </Alert>
       </Snackbar>
     </Box>
+  );
+}
+
+function StatusColumn(props: {
+  status: TaskStatus;
+  tasks: Awaited<ReturnType<typeof useTasks>["data"]>;
+  onError: (err: unknown) => void;
+  onDone: (alreadyDone: boolean) => void;
+  onUpdated: () => void;
+  onDeleted: () => void;
+}) {
+  const { status, tasks, onError, onDone, onUpdated, onDeleted } = props;
+  const { t } = useTranslation();
+  const color = STATUS_COLORS[status];
+  const columnTasks = (tasks ?? []).filter((task) => task.status === status);
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+
+  return (
+    <Paper
+      ref={setNodeRef}
+      variant="outlined"
+      sx={{
+        borderRadius: 6,
+        p: 1.5,
+        bgcolor: `${color}0D`,
+        borderColor: isOver ? color : `${color}2E`,
+        borderStyle: isOver ? "dashed" : "solid",
+        transition: "border-color 150ms ease-out, background-color 150ms ease-out",
+      }}
+    >
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1.5, px: 0.5 }}>
+        <Box
+          sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: color, flexShrink: 0 }}
+          aria-hidden
+        />
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          {t(`tasks.statuses.${status}`)}
+        </Typography>
+        <Chip
+          size="small"
+          label={columnTasks.length}
+          sx={{ ml: "auto", height: 20, fontWeight: 600, bgcolor: `${color}1F`, color }}
+        />
+      </Stack>
+
+      <Stack spacing={1.5}>
+        {columnTasks.length === 0 ? (
+          <Box
+            data-testid="empty-column"
+            sx={{
+              border: `2px dashed ${color}40`,
+              borderRadius: 3,
+              p: 2,
+              textAlign: "center",
+            }}
+          >
+            <Typography variant="body2" color="text.disabled">
+              {t("tasks.emptyList")}
+            </Typography>
+          </Box>
+        ) : (
+          columnTasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onError={onError}
+              onDone={onDone}
+              onUpdated={onUpdated}
+              onDeleted={onDeleted}
+            />
+          ))
+        )}
+      </Stack>
+    </Paper>
   );
 }
 

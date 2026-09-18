@@ -5,6 +5,7 @@ export function toDTO(doc: Record<string, unknown> & { _id: unknown }): TaskDTO 
   return {
     id: String(doc._id),
     userId: doc.userId as string,
+    ownerEmail: doc.ownerEmail as string | undefined,
     title: doc.title as string,
     description: doc.description as string | undefined,
     status: doc.status as TaskStatus,

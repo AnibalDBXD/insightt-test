@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
+  Typography,
   TextField,
   Button,
   CircularProgress,
@@ -15,6 +16,7 @@ import {
 import { taskCreateSchema, taskEditSchema } from "@/lib/validation/task.schema";
 import type { TaskDTO } from "@/lib/types";
 import type { TaskInput } from "@/hooks/useTasks";
+import { getSessionEmail } from "@/lib/apiClient";
 
 interface Props {
   open: DialogProps["open"];
@@ -63,6 +65,16 @@ export default function TaskFormDialog({ initial, submitting, onSubmit, ...dialo
     <Dialog {...dialog} maxWidth="xs" fullWidth>
       <DialogTitle>{initial ? t("tasks.editTask") : t("tasks.createTask")}</DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", px: 3, mb: 1 }}
+          data-testid="dialog-owner"
+        >
+          {initial
+            ? t("tasks.owner", { owner: initial.ownerEmail ?? getSessionEmail() ?? "—" })
+            : t("tasks.creatingAs", { email: getSessionEmail() ?? "—" })}
+        </Typography>
         <Stack
           component="form"
           spacing={2}

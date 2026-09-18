@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useDraggable } from "@dnd-kit/core";
 import {
   Card,
   CardContent,
@@ -15,12 +16,15 @@ import {
   DialogContent,
   DialogTitle,
   DialogActions,
+  Avatar,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import CheckIcon from "@mui/icons-material/Check";
 import type { TaskDTO } from "@/lib/types";
 import { nextStatuses, type TaskStatus } from "@/lib/taskState";
+import { STATUS_COLORS } from "@/styles/statusColors";
+import { getSessionEmail } from "@/lib/apiClient";
 import {
   useDeleteTask,
   useEditTask,
@@ -29,13 +33,6 @@ import {
   type TaskInput,
 } from "@/hooks/useTasks";
 import TaskFormDialog from "./TaskFormDialog";
-
-const STATUS_COLOR: Record<TaskStatus, "warning" | "info" | "success" | "default"> = {
-  PENDING: "warning",
-  IN_PROGRESS: "info",
-  DONE: "success",
-  ARCHIVED: "default",
-};
 
 interface Props {
   task: TaskDTO;
@@ -53,6 +50,18 @@ export default function TaskCard({ task, onError, onDone, onUpdated, onDeleted }
   const markDone = useMarkDone();
   const deleteTask = useDeleteTask();
   const editTask = useEditTask();
+
+  const color = STATUS_COLORS[task.status];
+  const owner = task.ownerEmail ?? getSessionEmail() ?? "—";
+  const initial = (owner[0] || "?").toUpperCase();
+
+  // Drag handle on the card root; the 8px activation distance keeps clicks
+  // on the buttons/select untouched. Moving tasks from the keyboard uses the
+  // status select instead.
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+    data: { status: task.status },
+  });
 
   const next = nextStatuses(task.status);
   const busy = moveStatus.isPending || markDone.isPending || deleteTask.isPending;
@@ -78,14 +87,36 @@ export default function TaskCard({ task, onError, onDone, onUpdated, onDeleted }
   }
 
   return (
-    <Card data-testid="task-item">
+    <Card
+      ref={setNodeRef}
+      data-testid="task-item"
+      style={{
+        transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+        opacity: isDragging ? 0.55 : 1,
+        cursor: isDragging ? "grabbing" : "grab",
+      }}
+      sx={{
+        transition: "box-shadow 150ms ease-out, opacity 150ms ease-out",
+        "&:hover": {
+          boxShadow: "0 2px 4px rgb(15 23 42 / 0.05), 0 8px 24px rgb(15 23 42 / 0.10)",
+        },
+        zIndex: isDragging ? 10 : undefined,
+      }}
+      {...listeners}
+      {...attributes}
+    >
       <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.5 }}>
           <Chip
             size="small"
-            color={STATUS_COLOR[task.status]}
             label={t(`tasks.statuses.${task.status}`)}
             data-testid="task-status"
+            sx={{
+              bgcolor: `${color}1F`,
+              color,
+              fontWeight: 600,
+              border: `1px solid ${color}33`,
+            }}
           />
           <Typography
             variant="subtitle1"
@@ -101,6 +132,29 @@ export default function TaskCard({ task, onError, onDone, onUpdated, onDeleted }
             {task.description}
           </Typography>
         )}
+
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 1.5 }}>
+          <Avatar
+            sx={{
+              width: 24,
+              height: 24,
+              fontSize: 12,
+              fontWeight: 600,
+              bgcolor: `${color}1F`,
+              color,
+            }}
+          >
+            {initial}
+          </Avatar>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            data-testid="task-owner"
+            sx={{ minWidth: 0, overflowWrap: "anywhere" }}
+          >
+            {t("tasks.owner", { owner })}
+          </Typography>
+        </Stack>
 
         <Stack
           direction="row"

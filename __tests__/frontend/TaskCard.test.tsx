@@ -1,6 +1,7 @@
 import "@/i18n";
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { DndContext } from "@dnd-kit/core";
 import TaskCard from "@/components/TaskCard";
 import type { TaskDTO } from "@/lib/types";
 
@@ -8,6 +9,7 @@ jest.mock("@/lib/apiClient", () => ({
   ApiError: class ApiError extends Error {},
   apiFetch: jest.fn(),
   getToken: jest.fn(() => null),
+  getSessionEmail: jest.fn(() => "owner@test.dev"),
 }));
 
 function makeTask(status: TaskDTO["status"]): TaskDTO {
@@ -28,13 +30,15 @@ function renderCard(task: TaskDTO) {
   const client = new QueryClient();
   return render(
     <QueryClientProvider client={client}>
-      <TaskCard
-        task={task}
-        onError={() => {}}
-        onDone={() => {}}
-        onUpdated={() => {}}
-        onDeleted={() => {}}
-      />
+      <DndContext>
+        <TaskCard
+          task={task}
+          onError={() => {}}
+          onDone={() => {}}
+          onUpdated={() => {}}
+          onDeleted={() => {}}
+        />
+      </DndContext>
     </QueryClientProvider>
   );
 }

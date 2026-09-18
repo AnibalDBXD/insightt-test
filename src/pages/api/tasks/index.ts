@@ -1,4 +1,4 @@
-import { getTasksCollection } from "@/lib/db";
+import { getTasksCollection, getUsersCollection } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import { withLogging } from "@/lib/logger";
 import { fail, ok } from "@/lib/http";
@@ -21,11 +21,22 @@ export default withLogging(
     if (req.method === "POST") {
       const { data, errors } = parseBody(taskCreateSchema, req.body);
       if (errors) return fail(res, 400, "VALIDATION_ERROR", errors);
+      // Store the owner's email on the task so cards can show it without joins.
+      let ownerEmail: string | undefined = ctx.user.email;
+      try {
+        const owner = await getUsersCollection().then((users) =>
+          users.findOne({ cognitoSub: ctx.user.sub })
+        );
+        if (owner?.email) ownerEmail = owner.email as string;
+      } catch {
+        // Mirror lookup is best-effort; the card falls back to the session email.
+      }
       const now = new Date();
       const doc = {
         title: data.title,
         description: data.description,
         userId: ctx.user.sub,
+        ownerEmail,
         status: "PENDING",
         doneAt: null,
         createdAt: now,

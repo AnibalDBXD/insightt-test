@@ -52,6 +52,8 @@
     "deleteConfirmTitle": "Delete task?",
     "deleteConfirmText": "\"{{title}}\" will be permanently deleted.",
     "markDone": "Mark as done",
+    "owner": "Created by {{owner}}",
+    "creatingAs": "Creating as {{email}}",
     "taskCreated": "Task created",
     "taskUpdated": "Task updated",
     "taskDeleted": "Task deleted",

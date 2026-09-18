@@ -52,6 +52,8 @@
     "deleteConfirmTitle": "¿Eliminar tarea?",
     "deleteConfirmText": "\"{{title}}\" se eliminará permanentemente.",
     "markDone": "Marcar como hecha",
+    "owner": "Creada por {{owner}}",
+    "creatingAs": "Creando como {{email}}",
     "taskCreated": "Tarea creada",
     "taskUpdated": "Tarea actualizada",
     "taskDeleted": "Tarea eliminada",
