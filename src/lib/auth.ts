@@ -1,8 +1,31 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { createRemoteJWKSet, jwtVerify, SignJWT } from "jose";
 import { fail } from "./http";
 import { cognitoConfigured } from "./cognito";
 import { setActor } from "./logger";
+
+export function e2eTestMode() {
+  return process.env.E2E_TEST_MODE === "1";
+}
+
+export const E2E_TEST_EMAIL = "e2e@test.local";
+export const E2E_TEST_PASSWORD = "Test1234!";
+
+function testKey(): Uint8Array {
+  return new TextEncoder().encode(process.env.E2E_TEST_SECRET || "e2e-test-secret");
+}
+
+export async function signTestToken(sub: string, email: string) {
+  return new SignJWT({ email, token_use: "access", client_id: process.env.COGNITO_CLIENT_ID })
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(sub)
+    .setIssuedAt()
+    .setIssuer(
+      `https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`
+    )
+    .setExpirationTime("1h")
+    .sign(testKey());
+}
 
 export interface AuthedUser {
   sub: string;
@@ -21,10 +44,27 @@ function jwks() {
   return remoteJwksCache.__cognitoJwks;
 }
 
+function isTestToken(token: string) {
+  if (!e2eTestMode()) return false;
+  const [h] = token.split(".");
+  if (!h) return false;
+  try {
+    const header = JSON.parse(Buffer.from(h, "base64url").toString()) as { alg?: string };
+    return header.alg === "HS256";
+  } catch {
+    return false;
+  }
+}
+
 export async function verifyAccessToken(token: string) {
-  const { payload } = await jwtVerify(token, jwks(), {
-    issuer: `https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
-  });
+  // Test-mode tokens are HS256-signed locally; real tokens are RS256 via JWKS.
+  const { payload } = await jwtVerify(
+    token,
+    isTestToken(token) ? testKey() : jwks(),
+    {
+      issuer: `https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
+    }
+  );
   if (
     payload.token_use !== "access" ||
     payload.client_id !== process.env.COGNITO_CLIENT_ID

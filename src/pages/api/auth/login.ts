@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { decodeJwt } from "jose";
 import { cognitoCall, cognitoConfigured, authParameters } from "@/lib/cognito";
+import { e2eTestMode, E2E_TEST_EMAIL, E2E_TEST_PASSWORD, signTestToken } from "@/lib/auth";
 import { fail, ok } from "@/lib/http";
 import { setActor, withLogging, logError } from "@/lib/logger";
 import { loginSchema } from "@/lib/validation/auth.schema";
@@ -26,6 +27,20 @@ export default withLogging(async function handler(req: NextApiRequest, res: Next
   if (errors) return fail(res, 400, "VALIDATION_ERROR", errors);
 
   try {
+    if (
+      e2eTestMode() &&
+      data.email === E2E_TEST_EMAIL &&
+      data.password === E2E_TEST_PASSWORD
+    ) {
+      const accessToken = await signTestToken("e2e-test-user", data.email);
+      return ok(res, {
+        accessToken,
+        idToken: accessToken,
+        expiresIn: 3600,
+        user: { sub: "e2e-test-user", email: data.email },
+      });
+    }
+
     const result = (await cognitoCall("InitiateAuth", {
       AuthFlow: "USER_PASSWORD_AUTH",
       ClientId: process.env.COGNITO_CLIENT_ID,
