@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { cognitoCall, cognitoConfigured, signUpRequest } from "@/lib/cognito";
 import { fail, ok } from "@/lib/http";
-import { setActor, withLogging } from "@/lib/logger";
+import { setActor, withLogging, logError } from "@/lib/logger";
 import { registerSchema } from "@/lib/validation/auth.schema";
 import { parseBody } from "@/lib/validation/parse";
 import { getUsersCollection } from "@/lib/db";
@@ -31,6 +31,7 @@ export default withLogging(async function handler(req: NextApiRequest, res: Next
     }
     return ok(res, { confirmed: result.UserConfirmed === "Yes" });
   } catch (e) {
+    logError(req, e);
     const err = e as { code?: string };
     if (err.code === "UsernameExistsException") return fail(res, 409, "EMAIL_EXISTS");
     if (err.code === "InvalidPasswordException") return fail(res, 400, "INVALID_PASSWORD");

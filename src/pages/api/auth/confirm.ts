@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 import { cognitoCall, cognitoConfigured, secretHash } from "@/lib/cognito";
 import { fail, ok } from "@/lib/http";
-import { setActor, withLogging } from "@/lib/logger";
+import { setActor, withLogging, logError } from "@/lib/logger";
 import { parseBody } from "@/lib/validation/parse";
 
 const confirmSchema = z.object({
@@ -33,6 +33,7 @@ export default withLogging(async function handler(req: NextApiRequest, res: Next
     await cognitoCall("ConfirmSignUp", payload);
     return ok(res, { confirmed: true });
   } catch (e) {
+    logError(req, e);
     const err = e as { code?: string };
     if (err.code === "CodeMismatchException") return fail(res, 400, "CODE_MISMATCH");
     if (err.code === "ExpiredCodeException") return fail(res, 400, "CODE_EXPIRED");

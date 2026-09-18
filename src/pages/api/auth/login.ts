@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { decodeJwt } from "jose";
 import { cognitoCall, cognitoConfigured, authParameters } from "@/lib/cognito";
 import { fail, ok } from "@/lib/http";
-import { setActor, withLogging } from "@/lib/logger";
+import { setActor, withLogging, logError } from "@/lib/logger";
 import { loginSchema } from "@/lib/validation/auth.schema";
 import { parseBody } from "@/lib/validation/parse";
 import { getUsersCollection } from "@/lib/db";
@@ -60,6 +60,7 @@ export default withLogging(async function handler(req: NextApiRequest, res: Next
       user: { sub: claims.sub, email: claims.email || data.email },
     });
   } catch (e) {
+    logError(req, e);
     const err = e as { code?: string };
     if (err.code === "NotAuthorizedException") return fail(res, 401, "INVALID_CREDENTIALS");
     if (err.code === "UserNotConfirmedException") return fail(res, 403, "USER_NOT_CONFIRMED");

@@ -20,6 +20,7 @@ export function fakeRes() {
   const res = {
     statusCode: 200,
     headers: {} as Record<string, unknown>,
+    writableEnded: false,
     body: undefined as unknown as {
       error?: { code: string };
       alreadyDone?: boolean;
@@ -38,6 +39,7 @@ export function fakeRes() {
     },
     json(payload: unknown) {
       res.body = payload as never;
+      res.writableEnded = true;
       return res;
     },
   };

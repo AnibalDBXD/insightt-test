@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { withAuth } from "@/lib/auth";
+import { withLogging } from "@/lib/logger";
 import { fakeReq, fakeRes } from "./helpers";
 
 process.env.COGNITO_REGION = "us-east-1";
@@ -40,5 +41,28 @@ describe("withAuth middleware", () => {
     const res = fakeRes();
     await handler(fakeReq({ headers: { authorization: "Basic abc" } }), res);
     expect(res.statusCode).toBe(401);
+  });
+});
+
+describe("withLogging middleware", () => {
+  it("logs unexpected errors and answers with a 500 envelope", async () => {
+    const throwing = withLogging(async () => {
+      throw new Error("database exploded");
+    });
+    const res = fakeRes();
+    await throwing(fakeReq({ query: { id: "x" } }), res);
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error?.code).toBe("INTERNAL_ERROR");
+  });
+
+  it("does not swallow handler responses on error paths", async () => {
+    const responding = withLogging(async (_req, res) => {
+      res.status(400).json({ error: { code: "VALIDATION_ERROR" } });
+      throw new Error("late failure after response");
+    });
+    const res = fakeRes();
+    await responding(fakeReq({}), res);
+    // The response was already sent; the late throw must not overwrite it.
+    expect(res.statusCode).toBe(400);
   });
 });
