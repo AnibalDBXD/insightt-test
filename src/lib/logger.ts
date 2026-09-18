@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { fail } from "./http";
+import { resetMongoClient } from "./db";
 
 interface LoggedUser {
   sub: string;
@@ -8,13 +9,23 @@ interface LoggedUser {
 
 const ACTOR = Symbol("actor");
 
-// Error log line: timestamp, actor, request context and the error itself
-// (message + stack) — this is what makes 5xx responses debuggable.
+// Error log line: flattened top-level error fields (name, message, code,
+// stack) so they are readable and searchable in log viewers (e.g. Vercel)
+// instead of being hidden inside a collapsed nested object.
 export function logError(req: NextApiRequest, e: unknown) {
+  const mongoProps = (err: unknown): Record<string, unknown> => {
+    const out: Record<string, unknown> = {};
+    const src = err as { code?: unknown; codeName?: unknown; errorLabels?: unknown; cause?: unknown };
+    if (src.code !== undefined) out.errorCode = src.code;
+    if (src.codeName !== undefined) out.errorCodeName = src.codeName;
+    if (src.errorLabels !== undefined) out.errorLabels = src.errorLabels;
+    if (src.cause !== undefined) out.errorCause = String(src.cause);
+    return out;
+  };
   const err =
     e instanceof Error
-      ? { message: e.message, stack: e.stack }
-      : { message: String(e) };
+      ? { errorName: e.name, errorMessage: e.message, errorStack: e.stack, ...mongoProps(e) }
+      : { errorMessage: String(e) };
   const actor = (req as { [ACTOR]?: LoggedUser })[ACTOR];
   process.stdout.write(
     JSON.stringify({
@@ -25,7 +36,7 @@ export function logError(req: NextApiRequest, e: unknown) {
       method: req.method,
       path: req.url,
       query: req.query,
-      error: err,
+      ...err,
     }) + "\n"
   );
 }
@@ -48,6 +59,11 @@ export function withLogging(handler: (req: NextApiRequest, res: NextApiResponse)
       return await handler(req, res);
     } catch (e) {
       logError(req, e);
+      // A dead Mongo topology poisons the cached client; drop it so the next
+      // request reconnects instead of failing instantly forever.
+      if (e instanceof Error && e.name === "MongoTopologyClosedError") {
+        resetMongoClient();
+      }
       if (!res.writableEnded) {
         fail(res, 500, "INTERNAL_ERROR");
       }
