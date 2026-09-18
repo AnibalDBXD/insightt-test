@@ -20,7 +20,14 @@ export function fakeRes() {
   const res = {
     statusCode: 200,
     headers: {} as Record<string, unknown>,
-    body: undefined as unknown,
+    body: undefined as unknown as {
+      error?: { code: string };
+      alreadyDone?: boolean;
+      deleted?: boolean;
+      status?: string;
+      id?: string;
+      task?: Record<string, unknown>;
+    },
     setHeader(key: string, value: unknown) {
       res.headers[key] = value;
       return res;
@@ -30,14 +37,11 @@ export function fakeRes() {
       return res;
     },
     json(payload: unknown) {
-      res.body = payload;
+      res.body = payload as never;
       return res;
     },
   };
-  return res as unknown as NextApiResponse & {
-    statusCode: number;
-    body: { error?: { code: string }; task?: Record<string, unknown>; alreadyDone?: boolean; deleted?: boolean };
-  };
+  return res as unknown as NextApiResponse & typeof res;
 }
 
 export const collection = {
@@ -46,16 +50,13 @@ export const collection = {
   insertOne: jest.fn(),
   deleteOne: jest.fn(),
   updateOne: jest.fn(),
-  find: jest.fn(() => ({ sort: () => ({ toArray: jest.fn(async () => []) }) })),
+  find: jest.fn(),
 };
 
 export function resetCollection() {
   for (const mock of Object.values(collection)) {
     (mock as jest.Mock).mockReset();
   }
-  collection.find.mockImplementation(() => ({
-    sort: () => ({ toArray: jest.fn(async () => []) }),
-  }));
 }
 
 export const TASK_ID = "665f1a2b3c4d5e6f708192a1";

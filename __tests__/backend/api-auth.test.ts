@@ -18,7 +18,7 @@ jest.mock("jose", () => ({
   decodeJwt: jest.fn(),
 }));
 
-const handler = withAuth(async (_req, res, _ctx) => {
+const handler = withAuth(async (_req, res) => {
   res.status(200).json({ ok: true });
 });
 
@@ -27,7 +27,7 @@ describe("withAuth middleware", () => {
     const res = fakeRes();
     await handler(fakeReq({}), res);
     expect(res.statusCode).toBe(401);
-    expect(res.body.error.code).toBe("UNAUTHORIZED");
+    expect(res.body.error?.code).toBe("UNAUTHORIZED");
   });
 
   it("rejects requests with a malformed token", async () => {

@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "cypress:open": "cypress open",
+    "e2e": "start-server-and-test start http://localhost:3000 \"cypress run --e2e\"",
+    "e2e:headless": "start-server-and-test start http://localhost:3000 \"cypress run --e2e --headless\""
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -36,10 +39,15 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cypress": "^16.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "jest": "^30.5.1",
     "jest-environment-jsdom": "^30.5.1",
+    "start-server-and-test": "^3.0.12",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "cypress@16.1.0": true
   }
 }

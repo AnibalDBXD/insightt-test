@@ -36,6 +36,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# cypress
+/cypress/screenshots
+/cypress/videos
+/cypress/downloads
+cypress.env.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
