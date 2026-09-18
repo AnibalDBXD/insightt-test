@@ -1,4 +1,3 @@
-import type { NextApiRequest, NextApiResponse } from "next";
 import { getTasksCollection } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
 import { withLogging } from "@/lib/logger";

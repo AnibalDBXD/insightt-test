@@ -1,4 +1,3 @@
-import type { NextApiRequest, NextApiResponse } from "next";
 import { ObjectId } from "mongodb";
 import { getTasksCollection } from "@/lib/db";
 import { withAuth } from "@/lib/auth";
@@ -7,10 +6,6 @@ import { fail, ok } from "@/lib/http";
 import { toDTO } from "@/lib/taskMapper";
 import { taskEditSchema } from "@/lib/validation/task.schema";
 import { parseBody } from "@/lib/validation/parse";
-
-const MESSAGES: Record<string, string> = {
-  VALIDATION_ERROR: "Validation failed",
-};
 
 export default withLogging(
   withAuth(async (req, res, ctx) => {
