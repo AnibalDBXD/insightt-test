@@ -15,9 +15,11 @@ if (!i18n.isInitialized) {
   });
 }
 
-// Hydration-safe: first client render matches the server (English), then the
-// stored preference is applied post-mount.
-if (typeof window !== "undefined") {
+// Hydration-safe: the stored language is applied only after hydration, from
+// the LocaleGate component in _app — never at module load, or SSR/SSG
+// (English) and client HTML would diverge.
+export function applyStoredLanguage() {
+  if (typeof window === "undefined") return;
   const stored = localStorage.getItem("lang");
   if (stored === "es" || stored === "en") {
     void i18n.changeLanguage(stored);

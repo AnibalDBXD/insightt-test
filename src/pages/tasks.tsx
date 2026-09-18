@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { useTranslation } from "react-i18next";
@@ -35,6 +35,15 @@ export default function TasksPage() {
   const { data: tasks, isLoading, error } = useTasks();
   const createTask = useCreateTask();
 
+  // The board reads localStorage (token, email) during render — render the
+  // spinner during hydration too, so the first client render matches the
+  // server HTML. useSyncExternalStore re-renders once hydration is done.
+  const hydrated = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  );
+
   // Client-side route guard.
   useEffect(() => {
     if (!getToken()) void router.replace("/login");
@@ -58,7 +67,7 @@ export default function TasksPage() {
     void router.replace("/login");
   }
 
-  if (!getToken() || (isLoading && !error)) {
+  if (!hydrated || !getToken() || (isLoading && !error)) {
     return (
       <Box sx={{ display: "grid", placeItems: "center", minHeight: "100dvh" }}>
         <CircularProgress />
@@ -184,4 +193,8 @@ export default function TasksPage() {
       </Snackbar>
     </Box>
   );
+}
+
+function subscribeNoop() {
+  return () => {};
 }
