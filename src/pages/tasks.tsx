@@ -250,15 +250,15 @@ export default function TasksPage() {
   );
 }
 
-function StatusColumn(props: {
+interface StatusColumnProps {
   status: TaskStatus;
   tasks: Awaited<ReturnType<typeof useTasks>["data"]>;
   onError: (err: unknown) => void;
   onDone: (alreadyDone: boolean) => void;
   onUpdated: () => void;
   onDeleted: () => void;
-}) {
-  const { status, tasks, onError, onDone, onUpdated, onDeleted } = props;
+}
+const StatusColumn = ({ status, tasks, onError, onDone, onUpdated, onDeleted }: StatusColumnProps) => {
   const { t } = useTranslation();
   const color = STATUS_COLORS[status];
   const columnTasks = (tasks ?? []).filter((task) => task.status === status);
