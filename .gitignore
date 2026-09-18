@@ -46,3 +46,4 @@ cypress.env.json
 *.tsbuildinfo
 next-env.d.ts
 .env*
+.swc
