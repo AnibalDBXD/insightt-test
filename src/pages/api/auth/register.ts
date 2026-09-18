@@ -1,11 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { cognitoCall, cognitoConfigured, signUpRequest } from "@/lib/cognito";
 import { fail, ok } from "@/lib/http";
+import { setActor, withLogging } from "@/lib/logger";
 import { registerSchema } from "@/lib/validation/auth.schema";
 import { parseBody } from "@/lib/validation/parse";
 import { getUsersCollection } from "@/lib/db";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default withLogging(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return fail(res, 405, "METHOD_NOT_ALLOWED");
@@ -14,6 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { data, errors } = parseBody(registerSchema, req.body);
   if (errors) return fail(res, 400, "VALIDATION_ERROR", errors);
+  setActor(req, { sub: "", email: data.email });
 
   try {
     const result = await cognitoCall("SignUp", signUpRequest(data.email, data.password));
@@ -34,4 +36,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (err.code === "InvalidPasswordException") return fail(res, 400, "INVALID_PASSWORD");
     return fail(res, 500, "INTERNAL_ERROR");
   }
-}
+});

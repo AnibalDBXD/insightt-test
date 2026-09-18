@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { decodeJwt } from "jose";
 import { cognitoCall, cognitoConfigured, authParameters } from "@/lib/cognito";
 import { fail, ok } from "@/lib/http";
+import { setActor, withLogging } from "@/lib/logger";
 import { loginSchema } from "@/lib/validation/auth.schema";
 import { parseBody } from "@/lib/validation/parse";
 import { getUsersCollection } from "@/lib/db";
@@ -14,7 +15,7 @@ interface AuthResult {
   };
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default withLogging(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return fail(res, 405, "METHOD_NOT_ALLOWED");
@@ -35,6 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!auth) return fail(res, 401, "INVALID_CREDENTIALS");
 
     const claims = decodeJwt(auth.IdToken) as { sub?: string; email?: string };
+    setActor(req, { sub: claims.sub || "", email: claims.email || data.email });
     try {
       const users = await getUsersCollection();
       if (claims.sub) {
@@ -63,4 +65,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (err.code === "UserNotConfirmedException") return fail(res, 403, "USER_NOT_CONFIRMED");
     return fail(res, 500, "INTERNAL_ERROR");
   }
-}
+});

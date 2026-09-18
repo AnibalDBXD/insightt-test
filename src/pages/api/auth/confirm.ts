@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 import { cognitoCall, cognitoConfigured, secretHash } from "@/lib/cognito";
 import { fail, ok } from "@/lib/http";
+import { setActor, withLogging } from "@/lib/logger";
 import { parseBody } from "@/lib/validation/parse";
 
 const confirmSchema = z.object({
@@ -9,7 +10,7 @@ const confirmSchema = z.object({
   code: z.string().min(4).max(10),
 });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default withLogging(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return fail(res, 405, "METHOD_NOT_ALLOWED");
@@ -18,6 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { data, errors } = parseBody(confirmSchema, req.body);
   if (errors) return fail(res, 400, "VALIDATION_ERROR", errors);
+  setActor(req, { sub: "", email: data.email });
 
   const payload: Record<string, unknown> = {
     ClientId: process.env.COGNITO_CLIENT_ID,
@@ -36,4 +38,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (err.code === "ExpiredCodeException") return fail(res, 400, "CODE_EXPIRED");
     return fail(res, 500, "INTERNAL_ERROR");
   }
-}
+});
