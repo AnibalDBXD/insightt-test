@@ -61,7 +61,7 @@
     "alreadyDone": "La tarea ya estaba hecha",
     "emptyList": "Aún no hay tareas aquí.",
     "titleField": "Título",
-    "description": "Descripción",
+    "descriptionOptional": "Descripción (opcional)",
     "doneOnlyTitle": "Las tareas completadas solo permiten corregir el título.",
     "statuses": {
       "PENDING": "Pendiente",

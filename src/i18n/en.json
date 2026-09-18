@@ -60,7 +60,6 @@
     "taskDone": "Task marked as done",
     "alreadyDone": "Task was already done",
     "emptyList": "No tasks here yet.",
-    "description": "Description",
     "titleField": "Title",
     "descriptionOptional": "Description (optional)",
     "doneOnlyTitle": "Completed tasks can only have their title fixed.",
