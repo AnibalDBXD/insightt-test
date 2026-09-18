@@ -8,7 +8,7 @@ import { getUsersCollection } from "@/lib/db";
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    return fail(res, 405, "VALIDATION_ERROR");
+    return fail(res, 405, "METHOD_NOT_ALLOWED");
   }
   if (!cognitoConfigured()) return fail(res, 500, "SERVER_NOT_CONFIGURED");
 

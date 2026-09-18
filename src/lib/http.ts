@@ -5,6 +5,7 @@ export type ApiErrorCode =
   | "UNAUTHORIZED"
   | "FORBIDDEN"
   | "NOT_FOUND"
+  | "METHOD_NOT_ALLOWED"
   | "EMAIL_EXISTS"
   | "CODE_MISMATCH"
   | "CODE_EXPIRED"

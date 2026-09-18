@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { fail } from "./http";
 import { cognitoConfigured } from "./cognito";
+import { setActor } from "./logger";
 
 export interface AuthedUser {
   sub: string;
@@ -47,12 +48,12 @@ export function withAuth(handler: AuthedHandler) {
     const token = header.startsWith("Bearer ") ? header.slice(7) : "";
     try {
       const payload = await verifyAccessToken(token);
-      return handler(req, res, {
-        user: {
-          sub: payload.sub as string,
-          email: payload.email as string | undefined,
-        },
-      });
+      const user = {
+        sub: payload.sub as string,
+        email: payload.email as string | undefined,
+      };
+      setActor(req, user);
+      return handler(req, res, { user });
     } catch {
       return fail(res, 401, "UNAUTHORIZED");
     }
