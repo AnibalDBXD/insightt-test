@@ -12,6 +12,8 @@
     "login": "Iniciar sesión",
     "register": "Registrarse",
     "confirm": "Confirmar",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
     "haveAccount": "¿Ya tienes una cuenta?",
     "noAccount": "¿No tienes una cuenta?",
     "signInLink": "Iniciar sesión",

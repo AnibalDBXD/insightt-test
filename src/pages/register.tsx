@@ -16,7 +16,11 @@ import {
   Alert,
   Link,
   CircularProgress,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { apiFetch, ApiError } from "@/lib/apiClient";
 import { registerSchema } from "@/lib/validation/auth.schema";
@@ -50,6 +54,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, string[]> | undefined>();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const registerForm = useForm<RegisterForm>({
     resolver: zodResolver(registerFormSchema),
@@ -160,7 +166,7 @@ export default function RegisterPage() {
                   {...registerForm.register("email")}
                 />
                 <TextField
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   label={t("auth.password")}
                   required
                   fullWidth
@@ -170,10 +176,27 @@ export default function RegisterPage() {
                       ? t(`validation.${registerErrors.password.message}`)
                       : undefined
                   }
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label={
+                              showPassword ? t("auth.hidePassword") : t("auth.showPassword")
+                            }
+                            onClick={() => setShowPassword((s) => !s)}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
                   {...registerForm.register("password")}
                 />
                 <TextField
-                  type="password"
+                  type={showConfirm ? "text" : "password"}
                   label={t("auth.confirmPassword")}
                   required
                   fullWidth
@@ -183,6 +206,23 @@ export default function RegisterPage() {
                       ? t(`validation.${registerErrors.confirmPassword.message}`)
                       : undefined
                   }
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label={
+                              showConfirm ? t("auth.hidePassword") : t("auth.showPassword")
+                            }
+                            onClick={() => setShowConfirm((s) => !s)}
+                            edge="end"
+                          >
+                            {showConfirm ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
                   {...registerForm.register("confirmPassword")}
                 />
                 <Button

@@ -15,7 +15,11 @@ import {
   Alert,
   Link,
   CircularProgress,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { apiFetch, ApiError, saveSession } from "@/lib/apiClient";
 import { loginSchema, type AuthInput } from "@/lib/validation/auth.schema";
@@ -30,6 +34,7 @@ export default function LoginPage() {
   const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, string[]> | undefined>();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -122,7 +127,7 @@ export default function LoginPage() {
                 {...register("email")}
               />
               <TextField
-                type="password"
+                type={showPassword ? "text" : "password"}
                 label={t("auth.password")}
                 required
                 fullWidth
@@ -132,6 +137,23 @@ export default function LoginPage() {
                     ? t(`validation.${fieldErrors.password.message}`)
                     : undefined
                 }
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label={
+                            showPassword ? t("auth.hidePassword") : t("auth.showPassword")
+                          }
+                          onClick={() => setShowPassword((s) => !s)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
                 {...register("password")}
               />
               <Button

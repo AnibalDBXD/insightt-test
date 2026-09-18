@@ -12,6 +12,8 @@
     "login": "Sign in",
     "register": "Sign up",
     "confirm": "Confirm",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "haveAccount": "Already have an account?",
     "noAccount": "Don't have an account?",
     "signInLink": "Sign in",
