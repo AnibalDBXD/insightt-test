@@ -267,14 +267,12 @@ function StatusColumn(props: {
   return (
     <Paper
       ref={setNodeRef}
-      variant="outlined"
       sx={{
         borderRadius: 6,
         p: 1.5,
-        bgcolor: `${color}0D`,
-        borderColor: isOver ? color : `${color}2E`,
-        borderStyle: isOver ? "dashed" : "solid",
-        transition: "border-color 150ms ease-out, background-color 150ms ease-out",
+        bgcolor: isOver ? `${color}1A` : `${color}0D`,
+        boxShadow: isOver ? `inset 0 0 0 2px ${color}40` : "none",
+        transition: "background-color 150ms ease-out, box-shadow 150ms ease-out",
       }}
     >
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1.5, px: 0.5 }}>
