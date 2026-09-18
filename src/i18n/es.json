@@ -39,7 +39,33 @@
     "loading": "Cargando...",
     "cancel": "Cancelar",
     "save": "Guardar",
-    "language": "Idioma"
+    "language": "Idioma",
+    "logout": "Cerrar sesión"
+  },
+  "tasks": {
+    "boardTitle": "Mis Tareas",
+    "newTask": "Nueva tarea",
+    "createTask": "Crear tarea",
+    "editTask": "Editar tarea",
+    "deleteTask": "Eliminar",
+    "deleteConfirmTitle": "¿Eliminar tarea?",
+    "deleteConfirmText": "\"{{title}}\" se eliminará permanentemente.",
+    "markDone": "Marcar como hecha",
+    "taskCreated": "Tarea creada",
+    "taskUpdated": "Tarea actualizada",
+    "taskDeleted": "Tarea eliminada",
+    "taskDone": "Tarea marcada como hecha",
+    "alreadyDone": "La tarea ya estaba hecha",
+    "emptyList": "Aún no hay tareas aquí.",
+    "titleField": "Título",
+    "description": "Descripción",
+    "doneOnlyTitle": "Las tareas completadas solo permiten corregir el título.",
+    "statuses": {
+      "PENDING": "Pendiente",
+      "IN_PROGRESS": "En progreso",
+      "DONE": "Hecha",
+      "ARCHIVED": "Archivada"
+    }
   },
   "validation": {
     "REQUIRED": "Este campo es obligatorio.",

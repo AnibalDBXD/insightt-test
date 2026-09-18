@@ -39,7 +39,34 @@
     "loading": "Loading...",
     "cancel": "Cancel",
     "save": "Save",
-    "language": "Language"
+    "language": "Language",
+    "logout": "Sign out"
+  },
+  "tasks": {
+    "boardTitle": "My Tasks",
+    "newTask": "New task",
+    "createTask": "Create task",
+    "editTask": "Edit task",
+    "deleteTask": "Delete",
+    "deleteConfirmTitle": "Delete task?",
+    "deleteConfirmText": "\"{{title}}\" will be permanently deleted.",
+    "markDone": "Mark as done",
+    "taskCreated": "Task created",
+    "taskUpdated": "Task updated",
+    "taskDeleted": "Task deleted",
+    "taskDone": "Task marked as done",
+    "alreadyDone": "Task was already done",
+    "emptyList": "No tasks here yet.",
+    "description": "Description",
+    "titleField": "Title",
+    "descriptionOptional": "Description (optional)",
+    "doneOnlyTitle": "Completed tasks can only have their title fixed.",
+    "statuses": {
+      "PENDING": "Pending",
+      "IN_PROGRESS": "In progress",
+      "DONE": "Done",
+      "ARCHIVED": "Archived"
+    }
   },
   "validation": {
     "REQUIRED": "This field is required.",
