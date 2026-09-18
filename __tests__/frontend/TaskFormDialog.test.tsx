@@ -43,7 +43,7 @@ describe("TaskFormDialog", () => {
     await screen.findByText(/At most 100 characters/i);
   });
 
-  it("locks description for DONE tasks and keeps title editable", () => {
+  it("locks description when editing any task and keeps title editable", () => {
     render(
       <TaskFormDialog
         open
@@ -60,6 +60,25 @@ describe("TaskFormDialog", () => {
       />
     );
     expect(screen.getByLabelText(/Description/i)).toBeDisabled();
-    expect(screen.getByText(/Completed tasks can only have their title fixed/i)).toBeInTheDocument();
+    expect(screen.getByText(/Only the title can be changed when editing/i)).toBeInTheDocument();
+  });
+
+  it("locks description when editing a non-done task too", () => {
+    render(
+      <TaskFormDialog
+        open
+        initial={{
+          id: "2",
+          userId: "u1",
+          title: "Pending task",
+          status: "PENDING",
+          doneAt: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }}
+        onSubmit={jest.fn()}
+      />
+    );
+    expect(screen.getByLabelText(/Description/i)).toBeDisabled();
   });
 });

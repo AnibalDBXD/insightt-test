@@ -62,7 +62,7 @@
     "emptyList": "Aún no hay tareas aquí.",
     "titleField": "Título",
     "descriptionOptional": "Descripción (opcional)",
-    "doneOnlyTitle": "Las tareas completadas solo permiten corregir el título.",
+    "editOnlyTitle": "Solo se puede editar el título.",
     "statuses": {
       "PENDING": "Pendiente",
       "IN_PROGRESS": "En progreso",

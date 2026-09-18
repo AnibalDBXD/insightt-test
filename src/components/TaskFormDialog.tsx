@@ -29,14 +29,14 @@ interface Props {
 export default function TaskFormDialog({ open, initial, submitting, onSubmit, ...dialog }: Props) {
   const { t } = useTranslation();
 
-  const doneLocked = Boolean(initial && initial.status === "DONE");
+  const editing = Boolean(initial);
 
   const schema = useMemo(
     () =>
-      doneLocked
+      editing
         ? taskEditSchema.required({ title: true }).omit({ description: true })
         : taskCreateSchema,
-    [doneLocked]
+    [editing]
   );
 
   const {
@@ -66,7 +66,7 @@ export default function TaskFormDialog({ open, initial, submitting, onSubmit, ..
   function submit(data: TaskInput) {
     onSubmit({
       title: data.title.trim(),
-      ...(doneLocked ? {} : { description: data.description?.trim() || undefined }),
+      ...(editing ? {} : { description: data.description?.trim() || undefined }),
     });
   }
 
@@ -109,8 +109,8 @@ export default function TaskFormDialog({ open, initial, submitting, onSubmit, ..
             fullWidth
             multiline
             minRows={2}
-            disabled={doneLocked}
-            helperText={doneLocked ? t("tasks.doneOnlyTitle") : fieldError("description")}
+            disabled={editing}
+            helperText={editing ? t("tasks.editOnlyTitle") : fieldError("description")}
             error={Boolean(errors.description)}
             {...register("description")}
           />

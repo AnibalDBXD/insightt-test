@@ -62,7 +62,7 @@
     "emptyList": "No tasks here yet.",
     "titleField": "Title",
     "descriptionOptional": "Description (optional)",
-    "doneOnlyTitle": "Completed tasks can only have their title fixed.",
+    "editOnlyTitle": "Only the title can be changed when editing.",
     "statuses": {
       "PENDING": "Pending",
       "IN_PROGRESS": "In progress",
